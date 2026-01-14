@@ -16,9 +16,10 @@ async function main() {
     try {
         await runCommand(registry, commandName, ...args);
     } catch (error) {
-        console.error(`Error executing command '${commandName}':`, error.message);
+        console.error(`Error executing command '${commandName}':`, (error as Error).message);
         exit(1);
     }
+    process.exit(0);
 }
 
 main();
