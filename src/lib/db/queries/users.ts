@@ -1,5 +1,6 @@
+import { UUID } from "node:crypto";
 import { db } from "..";
-import { users } from "../../../schema";
+import { users, feeds } from "../../../schema";
 import { eq } from 'drizzle-orm';
 
 export async function createUser(name: string) {
@@ -19,5 +20,23 @@ export async function resetDatabase() {
 
 export async function getUsers(): Promise<{name: string}[]> {
     const result = await db.select({name: users.name}).from(users);
+    return result;
+}
+
+export async function addFeed(feedName: string, feedURL: string, username: string): Promise<void> {
+    const user = await getUserByName(username);
+    if (!user) {
+        throw new Error(`User ${username} does not exist.`);
+    }
+
+    await db.insert(feeds).values({
+        name: feedName,
+        url: feedURL,
+        userId: user.id
+    });
+}
+
+export async function getFeeds(): Promise<{name: string, url: string, userName: string | null}[]> {
+    const result = await db.select({name: feeds.name, url: feeds.url, userName: users.name}).from(feeds).leftJoin(users, eq(feeds.userId, users.id));
     return result;
 }
