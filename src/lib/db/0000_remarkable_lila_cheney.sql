@@ -13,6 +13,7 @@ CREATE TABLE feeds (
 	"name" TEXT NOT NULL,
 	"url" TEXT NOT NULL,
 	"user_id" uuid NOT NULL,
+	"last_fetched_at" timestamp,
 	CONSTRAINT "unique_url" UNIQUE("url"),
 	CONSTRAINT "fk_user" FOREIGN KEY("user_id") REFERENCES "users"("id") ON DELETE CASCADE
 );
@@ -27,9 +28,6 @@ CREATE TABLE feed_follows (
 	CONSTRAINT "fk_user_ff" FOREIGN KEY("user_id") REFERENCES "users"("id") ON DELETE CASCADE,
 	CONSTRAINT "fk_feed_ff" FOREIGN KEY("feed_id") REFERENCES "feeds"("id") ON DELETE CASCADE
 );
-
-ALTER TABLE "feeds"
-ADD COLUMN "last_fetched_at" timestamp;
 
 CREATE TABLE posts (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
