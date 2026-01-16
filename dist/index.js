@@ -1,7 +1,7 @@
 import { runCommand, getCommandsRegistry } from "./command_handler";
 import { exit } from "node:process";
 async function main() {
-    let registry = getCommandsRegistry();
+    let registry = await getCommandsRegistry();
     let commandName = process.argv[2];
     // console.log(`commandName: ${commandName}`);
     if (!commandName) {

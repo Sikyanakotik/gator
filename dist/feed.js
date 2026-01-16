@@ -1,4 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
+import { getNextFeedToFetch, markFeedFetched, createPost } from './lib/db/queries/users';
 export async function fetchFeed(feedURL) {
     const response = await fetch(feedURL, {
         headers: {
@@ -44,7 +45,7 @@ export async function fetchFeed(feedURL) {
                 title: item.title,
                 link: item.link,
                 description: item.description,
-                pubDate: item.pubDate
+                pubDate: new Date(item.pubDate)
             });
         }
     }
@@ -56,4 +57,25 @@ export async function fetchFeed(feedURL) {
             item: items
         }
     };
+}
+export async function scrapeNextFeed() {
+    let nextFeed = await getNextFeedToFetch();
+    if (!nextFeed) {
+        console.log("No feeds to fetch.");
+        return;
+    }
+    try {
+        console.log(`Fetching feed: ${nextFeed.url}`);
+        const feedData = await fetchFeed(nextFeed.url);
+        console.log(`Fetched feed: ${feedData.channel.title} with ${feedData.channel.item.length} items.`);
+        // Process and store the feed data.
+        for (const item of feedData.channel.item) {
+            await createPost(item, nextFeed.id);
+        }
+    }
+    catch (error) {
+        console.error(`Error fetching feed ${nextFeed.url}:`, error.message);
+    }
+    console.log("");
+    await markFeedFetched(nextFeed.id);
 }

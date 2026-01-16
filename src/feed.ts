@@ -1,4 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
+import { getNextFeedToFetch, markFeedFetched, createPost } from './lib/db/queries/users';
 
 export type RSSFeed = {
   channel: {
@@ -10,10 +11,10 @@ export type RSSFeed = {
 };
 
 export type RSSItem = {
-  title: string;
+  title?: string;
   link: string;
   description: string;
-  pubDate: string;
+  pubDate: Date;
 };
 
 export async function fetchFeed(feedURL : string): Promise<RSSFeed> {
@@ -68,7 +69,7 @@ export async function fetchFeed(feedURL : string): Promise<RSSFeed> {
                 title: item.title,
                 link: item.link,
                 description: item.description,
-                pubDate: item.pubDate
+                pubDate: new Date(item.pubDate)
             });
         }
     }
@@ -83,3 +84,24 @@ export async function fetchFeed(feedURL : string): Promise<RSSFeed> {
     };
 }
 
+export async function scrapeNextFeed(): Promise<void> {
+    let nextFeed = await getNextFeedToFetch();
+    if (!nextFeed) {
+        console.log("No feeds to fetch.");
+        return;
+    }
+    try {
+        console.log(`Fetching feed: ${nextFeed.url}`);
+        const feedData = await fetchFeed(nextFeed.url);
+        console.log(`Fetched feed: ${feedData.channel.title} with ${feedData.channel.item.length} items.`);
+        
+        // Process and store the feed data.
+        for (const item of feedData.channel.item) {
+            await createPost(item, nextFeed.id);
+        }
+    } catch (error) {
+        console.error(`Error fetching feed ${nextFeed.url}:`, (error as Error).message);
+    }
+    console.log("");
+    await markFeedFetched(nextFeed.id);
+}
